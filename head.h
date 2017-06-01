@@ -44,5 +44,9 @@ void SearchData(pINAEX head);//查询数据
 int Calendar(int, int, int);//判断日期是否存在
 void SafeInput(wchar_t wcArray[],int );//确保输入的字符不会超出数组容量
 float SumAll(pINAEX);//计算当前的余额
-
+void NodeSwap(pINAEX, pINAEX);//交换节点数据函数
+void ListSort(pINAEX);//链表排序
+void ShowDailyList(pINAEX);//查询具体日期的收支情况
+void SearchForPeriod(pINAEX pHead);//统计一个给定区间收支情况
+void CorrectData(pINAEX pHead);//修改输错的条目
 #endif // _HEAD_H_

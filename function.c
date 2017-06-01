@@ -70,7 +70,7 @@ void StructCreation(pINAEX pHead)//按要求创建一个收支结构体的函数,
 	int iDay;
 	wchar_t wcLocation[20];
 	wchar_t wcKind[20];
-	printf("请输入本次的收支金额.\n");
+	printf("请输入本次的收支金额.（正数表示收入，负数表示输出）\n");
 	scanf("%f", &fValue);
 	printf("请输入本项收支所在年份.\n");
 	scanf("%d", &iYear);
@@ -122,10 +122,14 @@ void ListAddtion(pINAEX pHead)//创建链表中的下一项
 
 void ShowList(pINAEX pHead)
 {
+	ListSort(pHead);//sort list in time order
 	pINAEX pTemp = pHead;
 	while (pTemp)
 	{
-		wprintf(L"第%d项收支金额:%.2f 地点:%ls 类型:%ls 时间%d.%d.%d\n",pTemp->iNumber, pTemp->fValue, pTemp->szLocation, pTemp->szKind, pTemp->iYearDate, pTemp->iMonthDate, pTemp->iDayDate);
+		if (pTemp->fValue<0)
+			wprintf(L"第%d项收支情况:支出%.2f元 地点:%ls 类型:%ls 时间%d.%d.%d\n",pTemp->iNumber, -(pTemp->fValue), pTemp->szLocation, pTemp->szKind, pTemp->iYearDate, pTemp->iMonthDate, pTemp->iDayDate);
+		else
+			wprintf(L"第%d项收支情况:收入%.2f元 地点:%ls 类型:%ls 时间%d.%d.%d\n", pTemp->iNumber, pTemp->fValue, pTemp->szLocation, pTemp->szKind, pTemp->iYearDate, pTemp->iMonthDate, pTemp->iDayDate);
 		pTemp = pTemp->pNext;
 	}
 }
@@ -225,13 +229,21 @@ void SearchData(pINAEX pHead)//查找某年某月某日所有收支信息的函数
 	int iDay;
 	int iJudgement;
 	iJudgement = 0;// 用于判断是否一条记录都没有查到的标志
-
+	while (1)
+	{
 		printf("请输入所查项的收支所在年份.\n");
 		scanf("%d", &iYear);
 		printf("请输入所查项的收支所在月份.\n");
 		scanf("%d", &iMonth);
 		printf("请输入所查项的收支所在日期.\n");
 		scanf("%d", &iDay);
+		if (Calendar(iYear, iMonth, iDay) == 1)
+		{
+			printf("输入日期无效\n");
+		}
+		else
+			break;
+	}
 		pTemp = pHead;
 		do
 		{
@@ -307,6 +319,208 @@ float SumAll(pINAEX pHead)//计算当前所有余额
 	return fSum;
 }
 
+void NodeSwap(pINAEX a, pINAEX b)//在交换元素时保留iNumber
+{
+	pINAEX c = (pINAEX)malloc(sizeof(INAEX));
+	if (!c)
+	{
+		printf("获取空间失败!\n");
+		return NULL;
+	}
+	c-> fValue=a->fValue;
+	strcpy(c->szLocation, a->szLocation);
+	strcpy(c->szKind, a->szKind);
+	c-> iYearDate=a->iYearDate;
+	c-> iMonthDate=a->iMonthDate;
+	c-> iDayDate=a->iDayDate;
+
+	a->fValue = b->fValue;
+	strcpy(a->szLocation,b->szLocation);
+	strcpy(a->szKind, b->szKind);
+	a->iYearDate = b->iYearDate;
+	a->iMonthDate = b->iMonthDate;
+	a->iDayDate = b->iDayDate;
+	
+	b->fValue = c->fValue;
+	strcpy(b->szLocation, c->szLocation);
+	strcpy(b->szKind, c->szKind);
+	b->iYearDate = c->iYearDate;
+	b->iMonthDate = c->iMonthDate;
+	b->iDayDate = c->iDayDate;
+	free(c);
+}
+
+void ListSort(pINAEX pHead)//时间顺序对线性表排序 
+{
+	pINAEX pTemp = pHead;
+	while (pTemp->pNext) pTemp = pTemp->pNext;
+	int num = pTemp->iNumber;
+	while (--num)//冒泡排序
+	{
+		pTemp = pHead;
+		for (int i = 0; i < num; i++)
+		{
+			if ((pTemp->iYearDate>pTemp->pNext->iYearDate) || (pTemp->iYearDate == pTemp->pNext->iYearDate&&pTemp->iMonthDate > pTemp->pNext->iMonthDate) || (pTemp->iYearDate == pTemp->pNext->iYearDate&&pTemp->iMonthDate == pTemp->pNext->iMonthDate&&pTemp->iDayDate > pTemp->pNext->iDayDate))
+			{
+				NodeSwap(pTemp, pTemp->pNext);
+			}
+			pTemp = pTemp->pNext;
+		}
+	}
+}
+
+void ShowDailyList(pINAEX pHead)//查询具体日期的收支情况
+{
+	ListSort(pHead);//sort list in time order
+	int year, month, day,curyear,curmonth,curday;
+	float total;
+	pINAEX pTemp = pHead;
+	while (pTemp)
+	{
+		total = 0;
+		curyear = pTemp->iYearDate;
+		curmonth = pTemp->iMonthDate;
+		curday = pTemp->iDayDate;
+		do
+		{
+			if ((pTemp->iYearDate ==curyear) && (pTemp->iMonthDate == curmonth) && (pTemp->iDayDate == curday))
+			{
+				
+				total = total + pTemp->fValue;
+				pTemp = pTemp->pNext;
+			}
+			else
+			{
+				if(total>0)
+					printf("%d年%d月%d日收入了%f\n", curyear, curmonth, curday, total);
+				else
+					printf("%d年%d月%d日支出了%f\n", curyear, curmonth, curday, -total);
+				break;
+			}
+		} while (pTemp);
+		
+	}
+	if (total>0)                                          //输出最新一天的记录
+		printf("%d年%d月%d日收入了%f\n", curyear, curmonth, curday, total);
+	else
+		printf("%d年%d月%d日支出了%f\n", curyear, curmonth, curday, -total);
+}
+void SearchForPeriod(pINAEX pHead)
+{
+	int Y1, Y2, M1, M2, D1, D2;
+	int iJudgement = 0;
+	float fSum = 0;
+	pINAEX pTemp;
+	pTemp = pHead;
+	while (1)
+	{
+		printf("请输入所查时间段收支情况的起始年份.\n");
+		scanf("%d", &Y1);
+		printf("请输入所查时间段收支情况的起始月份.\n");
+		scanf("%d", &M1);
+		printf("请输入所查时间段收支情况的起始日期.\n");
+		scanf("%d", &D1);
+		if(Calendar(Y1,M1,D1)==1)
+		{
+			printf("您输入的日期无效\n");
+		}
+		else break;
+	}
+	while (1)
+	{
+		printf("请输入所查时间段收支情况的终止年份.\n");
+		scanf("%d", &Y2);
+		printf("请输入所查时间段收支情况的终止月份.\n");
+		scanf("%d", &M2);
+		printf("请输入所查时间段收支情况的终止日期.\n");
+		scanf("%d", &D2);
+		if (Calendar(Y2, M2, D2) == 1)
+		{
+			printf("您输入的日期无效\n");
+		}
+		else
+			break;
+	}
+	while (pTemp != NULL)
+	{
+		if (pTemp->iYearDate >= Y1 && pTemp->iYearDate <= Y2)
+		{
+			fSum = fSum + pTemp->fValue;
+			pTemp = pTemp->pNext;
+			iJudgement = iJudgement + 1;
+			continue;
+		}
+		else if (pTemp->iMonthDate >= M1 && pTemp->iMonthDate <= M2)
+		{
+			fSum = fSum + pTemp->fValue;
+			pTemp = pTemp->pNext;
+			iJudgement = iJudgement + 1;
+			continue;
+		}
+		else if (pTemp->iDayDate >= D1 && pTemp->iDayDate <= D2)
+		{
+			fSum = fSum + pTemp->fValue;
+			pTemp = pTemp->pNext;
+			iJudgement = iJudgement + 1;
+			continue;
+		}
+		else pTemp = pTemp->pNext;
+	}
+	
+	if (iJudgement == 0)
+		printf("该时间段您没有做任何记录\n");
+	else
+	{
+
+		if (fSum>0)
+			printf("这段时间收入了%f\n", fSum);
+		else
+			printf("这段时间支出了%f\n",  -fSum);
+	}
+}
+void CorrectData(pINAEX pHead)
+{
+	ShowList(pHead);
+	int iNum, iChoise,iJudgement;
+	iJudgement = 0;
+	pINAEX pTemp;
+	printf("请输入需要修改的条目的序号:");
+	scanf("%d", &iNum);
+	pTemp = pHead;
+	while (pTemp != NULL)
+	{
+		if (pTemp->iNumber != iNum)
+			pTemp = pTemp->pNext;
+		else
+		{
+			iJudgement = 1;
+			wprintf(L"所查项目为第%d项收支金额:%.2f 地点:%ls 类型:%ls 时间%d.%d.%d\n", pTemp->iNumber, pTemp->fValue, pTemp->szLocation, pTemp->szKind, pTemp->iYearDate, pTemp->iMonthDate, pTemp->iDayDate);
+			printf("请输入正确的金额\n");
+			scanf("%f", &pTemp->fValue);
+			wprintf(L"所查项目为第%d项收支金额:%.2f 地点:%ls 类型:%ls 时间%d.%d.%d\n", pTemp->iNumber, pTemp->fValue, pTemp->szLocation, pTemp->szKind, pTemp->iYearDate, pTemp->iMonthDate, pTemp->iDayDate);
+			printf("请输入正确的地点\n");
+			SafeInput(pTemp->szLocation, 20);
+			wprintf(L"所查项目为第%d项收支金额:%.2f 地点:%ls 类型:%ls 时间%d.%d.%d\n", pTemp->iNumber, pTemp->fValue, pTemp->szLocation, pTemp->szKind, pTemp->iYearDate, pTemp->iMonthDate, pTemp->iDayDate);
+			printf("请输入正确的类型\n");
+			SafeInput(pTemp->szKind, 20);
+			wprintf(L"所查项目为第%d项收支金额:%.2f 地点:%ls 类型:%ls 时间%d.%d.%d\n", pTemp->iNumber, pTemp->fValue, pTemp->szLocation, pTemp->szKind, pTemp->iYearDate, pTemp->iMonthDate, pTemp->iDayDate);
+			printf("请输入正确的 年\n");
+			scanf("%d",& pTemp->iYearDate);
+			wprintf(L"所查项目为第%d项收支金额:%.2f 地点:%ls 类型:%ls 时间%d.%d.%d\n", pTemp->iNumber, pTemp->fValue, pTemp->szLocation, pTemp->szKind, pTemp->iYearDate, pTemp->iMonthDate, pTemp->iDayDate);
+			printf("请输入正确的 月\n");
+			scanf("%d", &pTemp->iMonthDate);			
+			wprintf(L"所查项目为第%d项收支金额:%.2f 地点:%ls 类型:%ls 时间%d.%d.%d\n", pTemp->iNumber, pTemp->fValue, pTemp->szLocation, pTemp->szKind, pTemp->iYearDate, pTemp->iMonthDate, pTemp->iDayDate);
+			printf("请输入正确的 日\n");
+			scanf("%d", &pTemp->iDayDate);
+			break;
+			ListSort(pHead);
+			system("cls");
+		}
+	}
+	if (iJudgement == 0)
+		printf("没有找到这条条目\n");
+
+}
 void ExitApplication(pINAEX pHead)//实现退出程序的函数
 {
 	exit(0);
