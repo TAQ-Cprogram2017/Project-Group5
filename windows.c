@@ -1,8 +1,11 @@
 #include<windows.h>
 #include"head.h"
 #include"function.h"
+#include"resource.h"
 pINAEX pHead;
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);        //声明用来处理消息的函数
+BOOL CALLBACK Input1DlgProc(HWND, UINT, WPARAM, LPARAM);      //声明用来处理新建结构体的函数
+BOOL CALLBACK Input2DlgProc(HWND, UINT, WPARAM, LPARAM);      //声明用来处理删除指定条目的函数
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
 {
 	static TCHAR szAppName[] = TEXT("MyWindow");
@@ -52,36 +55,56 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	static HINSTANCE hInstance;
 	static HWND hwndButton[NUM];//按钮子窗体的句柄
+	static HFONT hFont;  //定义逻辑字体
 	static RECT rect; //矩形结构
-	static HWND hwndList;
-	static TCHAR szTop[] = TEXT("         项目序号       收支金额            原因或目的           地点            时间   "),
-		         szFormat[] = TEXT("%-16s%04W-%04X %04X-%04X"),
-		         szBuffer[50];
-	static int cxChar, cyChar;
-	int i;
+	static TCHAR szTop[] = TEXT("         项目序号       收支金额            原因或目的           地点            时间   ");
+	static HWND hwndList;//列表框句柄
+	static int cxChar, cyChar;//关于字符的大小
+	int i;//按钮计数用
 	HDC hdc;                //设备环境句柄
 	PAINTSTRUCT ps;         //绘制结构
+
 	switch (message)        //处理得到的消息
 	{
 	case WM_CREATE:          //窗口创建完成时发来的消息
+		hInstance = ((LPCREATESTRUCT)lParam)->hInstance;
+
+		hFont = CreateFont(//创建逻辑字体
+			-14, -7, //高和宽
+			0, 0, 400, //一般这个值设为400
+			FALSE, //斜体与否
+			FALSE,//下划线与否
+			FALSE,//删除线与否
+			DEFAULT_CHARSET,
+			OUT_CHARACTER_PRECIS, 
+			CLIP_CHARACTER_PRECIS,
+			DEFAULT_QUALITY,
+			FF_DONTCARE, 
+			L"微软雅黑"//调用的字体名
+		    );
+
 		cxChar = LOWORD(GetDialogBaseUnits());
 		cyChar = HIWORD(GetDialogBaseUnits());
-		for(i=0;i<NUM;i++)
-			hwndButton[i]=CreateWindow//创建按钮子窗体
+		for (i = 0; i < NUM; i++)
+		{
+			hwndButton[i] = CreateWindow//创建按钮子窗体
 			(
-			TEXT("button"),//按钮子窗体的类名
-			button[i].szText,//按钮子窗体的文本
-			WS_CHILD | WS_VISIBLE | button[i].iStyle, //按钮子窗体的类型
-			30+cxChar, 30+15*i+cyChar*(1 + 2 * i),//按钮子窗体的位置
-			15 * cxChar, 2.5* cyChar , //按钮子窗体的大小
-			hwnd,//父窗体名
-			(HMENU)i, //子窗体参数
-			((LPCREATESTRUCT)lParam)->hInstance,//案例句柄
-			NULL//额外参数
+				L"button",//按钮子窗体的类名
+				button[i].szText,//按钮子窗体的文本
+				WS_CHILD | WS_VISIBLE | button[i].iStyle, //按钮子窗体的类型
+				30 + cxChar, 30 + 15 * i + cyChar*(1 + 2 * i),//按钮子窗体的位置
+				15 * cxChar, 2.5* cyChar, //按钮子窗体的大小
+				hwnd,//父窗体名
+				(HMENU)i, //子窗体参数
+				((LPCREATESTRUCT)lParam)->hInstance,//案例句柄
+				NULL//额外参数
 			);
+			SendMessage(hwndButton[i], WM_SETFONT, (WPARAM)hFont, 0);
+		}
 		hwndList = CreateWindow(//创建列表框子窗体
-			TEXT("listbox"),// 列表框子窗体的类名
+			L"listbox",// 列表框子窗体的类名
 			NULL,
 			WS_CHILD | WS_VISIBLE | LBS_STANDARD,//列表框子窗体的类型
 			200 + cxChar, 3 * cyChar,//列表框子窗体的位置
@@ -90,18 +113,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			(HMENU)NUM + 1,//子窗体参数
 			(HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE),//案例句柄
 			NULL);//额外参数
+		SendMessage(hwndList, WM_SETFONT, (WPARAM)hFont, 0);
 		pHead = ListInitialise(0, 0, 0, 0);
 		ReadData(pHead);
 		MessageBox(hwnd, TEXT("欢迎使用记账本。"), TEXT("初始化成功"), MB_OK | MB_ICONINFORMATION);
 		return 0;
     
-	case WM_SIZE:
+	case WM_SIZE://定义矩形结构体的位置
 		rect.left = 15 * cxChar;
 		rect.top = 2 * cyChar;
 		rect.right = LOWORD(lParam);
 		rect.bottom = HIWORD(lParam);
 		return 0;
-	case WM_PAINT:
+	case WM_PAINT://根据矩形结构体输出字符
 		InvalidateRect(hwnd,&rect,TRUE);
 		hdc = BeginPaint(hwnd, &ps);
 		SelectObject(hdc, GetStockObject(SYSTEM_FIXED_FONT));
@@ -110,14 +134,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		EndPaint(hwnd, &ps);
 		return 0;
 
-	case WM_LBUTTONDOWN:     //处理鼠标左键被按下的操作
+	case WM_LBUTTONDOWN:     //处理在其他区域鼠标左键被按下的操作
 		MessageBox(hwnd, TEXT("无效操作。"), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
 		return 0;
 	case WM_DESTROY:         //处理关闭窗口的操作
 		PostQuitMessage(0);
+		DeleteObject(hFont);
 		return 0;
 
-	case WM_SETFOCUS:
+	case WM_SETFOCUS://建立焦点
 		SetFocus(hwndList);
 		break;
 
@@ -131,23 +156,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			else if ((HWND)lParam == hwndButton[1])
 			{
-				pINAEX pTemp = pHead;
-				int iIndex;
-				TCHAR szString;
-				while (pTemp)
-				{
-					iIndex = pTemp->iNumber;
-					szString = "1";
-					SendMessage(hwndList, LB_ADDSTRING, iIndex - 1, (LPARAM)szString);
-					pTemp = pTemp->pNext;
-				}
+				MessageBox(hwnd, TEXT("本功能尚未开发"), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
 				break;
 			}
 			else if ((HWND)lParam == hwndButton[2])
-				{
+			{
 				ReadData(pHead);
-					break;
-				}
+				break;
+			}
 			else if ((HWND)lParam == hwndButton[3])
 			{
 				SaveData(pHead);
@@ -155,27 +171,57 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			else if ((HWND)lParam == hwndButton[4])
 			{
-
+				DialogBox(hInstance, L"InputBox1", hwnd, Input1DlgProc);
 				break;
 			}
 			else if ((HWND)lParam == hwndButton[5])
 			{
-				int iIndex;
-				
-				DeleteData(pHead,iIndex);
-				SendMessage(hwndList, LB_DELETESTRING, iIndex, 0);
+				DialogBox(hInstance, L"InputBox2", hwnd, Input2DlgProc);
 				break;
 			}
 			else if ((HWND)lParam == hwndButton[6])
 			{
-
+				MessageBox(hwnd, TEXT("本功能尚未开发"), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
 				break;
 			}
 		return 0;
 	}
-
-
-
 	return DefWindowProc(hwnd, message, wParam, lParam);        //DefWindowProc处理我们自定义的消息处理函数没有处理到的消息
 }
 
+BOOL CALLBACK Input1DlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDOK:
+		case IDCANCEL:
+			EndDialog(hDlg, 0);
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}
+BOOL CALLBACK Input2DlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		return TRUE;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDOK:
+		case IDCANCEL:
+			EndDialog(hDlg, 0);
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}

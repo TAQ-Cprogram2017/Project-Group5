@@ -13,7 +13,6 @@ pINAEX ListInitialise(float Value, int BeginYear, int BeginMonth, int BeginDay)/
 	pIncomeAndExpenseList = (pINAEX)malloc(sizeof(INAEX));//¸øÒ»Ğ©¿Õ¼ä
 	if (!pIncomeAndExpenseList)
 	{
-		printf("»ñÈ¡¿Õ¼äÊ§°Ü!\n");
 		return NULL;
 	}
 	/*³õÊ¼»¯±íÍ·*/
@@ -36,27 +35,21 @@ void StructCreation(pINAEX pHead)//°´ÒªÇó´´½¨Ò»¸öÊÕÖ§½á¹¹ÌåµÄº¯Êı,
 	int iDay;
 	wchar_t wcLocation[20];
 	wchar_t wcKind[20];
-	printf("ÇëÊäÈë±¾´ÎµÄÊÕÖ§½ğ¶î.\n");
 	scanf("%f", &fValue);
-	printf("ÇëÊäÈë±¾ÏîÊÕÖ§ËùÔÚÄê·İ.\n");
 	scanf("%d", &iYear);
 
 	for (;;)//ÅĞ¶ÏÔÂ·İÊÇ·ñ´æÔÚ
 	{
-		printf("ÇëÊäÈë±¾ÏîÊÕÖ§ËùÔÚÔÂ·İ.\n");
 		scanf("%d", &iMonth);
-		if (iMonth<1 || iMonth>12)
-			printf("ÊäÈëµÄÔÂ·İÎŞĞ§£¬ÇëÖØĞÂÊäÈë\n");
+		if (iMonth < 1 || iMonth>12);
 		else break;
 	}
 
 	for (;;)//ÅĞ¶ÏÈÕÆÚÊÇ·ñ´æÔÚ
 	{
-		printf("ÇëÊäÈë±¾ÏîÊÕÖ§ËùÔÚÈÕÆÚ.\n");
 		scanf("%d", &iDay);
 		if (Calendar(iYear, iMonth, iDay))
 		{
-			printf("ÊäÈëµÄÈÕÆÚÎŞĞ§£¬ÇëÖØĞÂÊäÈë\n");
 		}
 		else break;
 	}
@@ -64,15 +57,10 @@ void StructCreation(pINAEX pHead)//°´ÒªÇó´´½¨Ò»¸öÊÕÖ§½á¹¹ÌåµÄº¯Êı,
 	pHead->iDayDate = iDay;
 	pHead->iMonthDate = iMonth;
 	pHead->iYearDate = iYear;
-
-	printf("ÇëÊäÈë±¾ÏîÊÕÖ§ËùÔÚµØµã.(19×ÖÒÔÄÚ)\n");
 	SafeInput(wcLocation, 20);
 	wcscpy(pHead->szLocation, wcLocation);
-
-	printf("ÇëÊäÈë±¾ÏîÊÕÖ§ÀàĞÍ.(19×ÖÒÔÄÚ)\n");
 	SafeInput(wcKind, 20);
 	wcscpy(pHead->szKind, wcKind);
-	printf("ÌõÄ¿´´½¨³É¹¦.ÇëÄú½øĞĞÏÂÒ»Ïî²Ù×÷.\n");
 }
 
 void ListAddtion(pINAEX pHead)//´´½¨Á´±íÖĞµÄÏÂÒ»Ïî
@@ -92,7 +80,6 @@ void SaveData(pINAEX pHead)
 	FILE *fp;
 	if ((fp = fopen("D:/data.txt", "wb+")) == NULL)//ÓÃÖğÏîĞ´ÈëµÄ·½Ê½´ò¿ªÒ»¸öÃûÎªdata.txtµÄ¶ş½øÖÆµÄÎÄ¼ş
 	{
-		printf("ÎŞ·¨´ò¿ªÎÄ¼ş!\n");
 		return;
 	}
 	pINAEX pTemp;
@@ -110,7 +97,6 @@ void ReadData(pINAEX pHead)
 	FILE *fp;
 	if ((fp = fopen("D:/data.txt", "rb")) == NULL)//ÓÃ¶ÁÈ¡µÄ·½Ê½´ò¿ªÒ»¸öÃûÎªdata.txtµÄ¶ş½øÖÆµÄÎÄ¼ş
 	{
-		printf("ÎŞ·¨´ò¿ªÎÄ¼ş,²¢ÒÑ¾­ÖØĞÂ´´½¨ÎÄ¼ş!\n");
 		fp = fopen("D:/data.txt", "wb+");
 		SaveData(pHead);
 		return;
@@ -141,7 +127,6 @@ void DeleteData(pINAEX pHead,int iIndex)//É¾³ıÖ¸¶¨½ÚµãÌõÄ¿µÄº¯Êı
 	pINAEX pPre = pHead;
 	if (iNum == 1)
 	{
-		printf("ÎŞ·¨É¾³ıµÚÒ»Ìõ³õÊ¼Êı¾İ\n");
 		return;
 	}
 	pINAEX pTemp = pHead;
@@ -149,7 +134,6 @@ void DeleteData(pINAEX pHead,int iIndex)//É¾³ıÖ¸¶¨½ÚµãÌõÄ¿µÄº¯Êı
 	{
 		if ((pTemp->pNext == NULL))//Èç¹ûÒÑ¾­µ½ÁËÄ©Î²£¬¾Í»Øµ½Ö÷º¯Êı
 		{
-			printf("Ã»ÓĞÕÒµ½ÕâÏîÌõÄ¿!\n");
 			return;
 		}
 		pPre = pTemp;
@@ -209,15 +193,11 @@ void SafeInput(wchar_t wcArray[], int iLimit)//¼ì²éÊäÈëµÄ×Ö·ûÊÇ·ñ³¬³öÊı×éÈİÁ¿£¬Ó
 		wscanf(L"%ls", wcArray);
 		if ((strlen(wcArray)) > iNum)//±È½ÏÊı×é³¤¶ÈÓëÈİÁ¿
 		{
-			printf("*************************\n");
-			printf("³¬¹ı×ÖÊıÉÏÏŞ£¬ÇëÖØĞÂÊäÈë\n");
-			printf("*************************\n");
 			while (c = getwchar() != L'\n'&&c != EOF);//Çå¿Õ»º³åÇø
 		}
 		else
 			break;
 	}
-
 }
 
 
